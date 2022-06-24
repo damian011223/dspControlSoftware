@@ -29,15 +29,15 @@ class MidiVisualizer(mido.MidiFile):
         
 
     def initFigure(self):
-        px = 1/plt.rcParams['figure.dpi']  # pixel in inches
+        px = 1/plt.rcParams['figure.dpi']  # pixel to inches
         self.fig = plt.figure(figsize=(680*px, 320*px), tight_layout=True) #todo import value from first run
         self.fig.tight_layout()
         self.fig.patch.set_facecolor('none')
         return self.fig
 
     def getSizeInPixels(self):
-        px = plt.rcParams['figure.dpi']  # pixel in inches
-        return [int(self.xLength *px), 320]
+        inch = plt.rcParams['figure.dpi']  # inches to pixel
+        return [int(self.xLength *inch), 320]
 
     def getMessageCount(self):
         return self.msgCounter
@@ -147,32 +147,27 @@ class MidiVisualizer(mido.MidiFile):
 
     def draw_roll(self):
         visualizationFile = os.path.basename(self.filename)[:-4] + ".png"
-        roll = self.get_roll()
+        roll = self.get_roll() #get data from midi file
         #plt.clf()
-        plt.subplots_adjust(left=0.045, right=1, top=1, bottom=0.09)
+        plt.subplots_adjust(left=0.045, right=1, top=1, bottom=0.09) #shift plot to corner
         # build and set fig obj
         
         a1 = self.fig.add_subplot(111)
-        #a1.axis("equal")
         a1.set_facecolor('none')
 
         # change unit of time axis from tick to self.totalTimeSeconds
-        tick = self.get_total_ticks()
-        self.totalTimeSeconds = mido.tick2second(tick, self.ticks_per_beat, self.get_tempo()) 
+        totalTicks = self.get_total_ticks()
+        self.totalTimeSeconds = mido.tick2second(totalTicks, self.ticks_per_beat, self.get_tempo()) 
         x_label_period_sec = 1  # time in seconds
         x_label_interval = mido.second2tick(x_label_period_sec, self.ticks_per_beat, self.get_tempo()) #/ self.sr  # 940.803 = Ticks
         x_label_interval = 5000
         x_label_period_sec = mido.tick2second(x_label_interval, self.ticks_per_beat, self.get_tempo())
 
-        #gesamt laenge
-        totalTicks = tick
         print("Len inter in sec: " + str(x_label_period_sec))
         while(totalTicks % 5000 != 0):
             totalTicks += 1
-        #while(len(list(range(0,totalTicks,(int)(np.ceil(x_label_interval))))) != len(list(range(0,self.totalTimeSeconds),x_label_period_sec))):
-        #    self.totalTimeSeconds += x_label_period_sec
         print("Int: " + str(x_label_interval))
-        px = 1/plt.rcParams['figure.dpi']  # pixel in inches
+        px = 1/plt.rcParams['figure.dpi']  # pixel to inches
         if self.totalTimeSeconds > 8:
             x = self.totalTimeSeconds - 8
             self.xLength = 800*px + (int)(np.ceil(x))*25*px
@@ -251,7 +246,7 @@ class MidiVisualizer(mido.MidiFile):
         a1.set_axis_off()
         self.fig.add_axes(a1)
         #-------------------------------------
-        px = 1/plt.rcParams['figure.dpi']  # pixel in inches
+        px = 1/plt.rcParams['figure.dpi']  # pixel to inches
         self.fig.set_size_inches(self.xLength, 320*px, forward=True)
         #------------------------------------- 
         visualizationFile = os.path.basename(self.filename)[:-4] +".png"
@@ -279,14 +274,14 @@ class MidiVisualizer(mido.MidiFile):
         return max_ticks
 
     def calcPointerStepSize(self):
-        px = plt.rcParams['figure.dpi']  # pixel in inches
-        self.stepSize = (self.xLength * px) / (np.ceil(self.totalTimeSeconds)*10)
-        print(self.xLength  * px)
+        inches = plt.rcParams['figure.dpi']  # inches to pixel
+        self.stepSize = (self.xLength * inches) / (np.ceil(self.totalTimeSeconds)*10)
+        print(self.xLength  * inches)
         print(self.totalTimeSeconds)
         print(self.stepSize)
 
     def updatePointer(self, index):
         self.pointer.set_xdata(index*self.stepSize)
         self.pointer.figure.canvas.draw()
-        px = plt.rcParams['figure.dpi']  # pixel in inches
-        return [index*self.stepSize, self.xLength  * px]
+        inch = plt.rcParams['figure.dpi']  # inches to pixel
+        return [index*self.stepSize, self.xLength  * inch]
