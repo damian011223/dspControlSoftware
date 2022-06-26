@@ -54,8 +54,8 @@ class MainWindow(QMainWindow):
         self.buttonOpenFile.clicked.connect(self.openNewFile) 
         self.buttonPlay.clicked.connect(self.playTrack)
         self.buttonStop.clicked.connect(self.stopTrack)
-        self.adjustVolume.setMinimum(0)
-        self.adjustVolume.setMaximum(int(1023/16))
+        self.adjustVolume.setMinimum(48)
+        self.adjustVolume.setMaximum(127)
         self.adjustVolume.valueChanged.connect(self.setVolume)
         #load default values
         self.progressBar.setRange(0,0)
@@ -141,7 +141,7 @@ class MainWindow(QMainWindow):
     def setVolume(self):
         #set global volume here
         newVolume = self.adjustVolume.value()
-        self.chHandler.volume = newVolume
+        self.chHandler.setVolume(newVolume)
         self.updateLog("Volume is set to " + str(newVolume))
 
     def updateLog(self, message):
@@ -154,6 +154,7 @@ class MainWindow(QMainWindow):
         mid = MidiFile(self.filename)
         msgCounter = 0
         maxTones= 0 
+        fileDuration = mid.length()
         for msg in mid.play():
             if not msg.is_meta:
                 if self.is_stopped:

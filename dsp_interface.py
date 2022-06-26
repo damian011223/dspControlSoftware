@@ -11,6 +11,7 @@ class DSPCommands(Enum):
     StartTone = 1
     StopTone = 2
     Reset = 3
+    SetVolume = 4
 
 class DSPInterface:
     def __init__(self, numberOfChannels) -> None:
@@ -56,6 +57,10 @@ class DSPInterface:
     def stopTone(self, channel):
         data = channel
         self.sendCommand(DSPCommands.StopTone, data, 2)
+        
+    def setVolume(self, volume):
+        data = volume
+        self.sendCommand(DSPCommands.SetVolume, data, 2)
 
     def resetDSP(self):
         self.sendCommand(DSPCommands.Reset, 0, 0)
@@ -98,7 +103,7 @@ class ChannelHandler:
             return
 
         channel = index
-        print(len(self.tones))
+        #print(len(self.tones))
         
         # send start Tone on channel index
         gain = self.volume * velocity / 127
@@ -113,3 +118,6 @@ class ChannelHandler:
             self.dspInterface.stopTone(channel)
         
         print(len(self.tones))
+        
+    def setVolume(self, volume):
+        self.dspInterface.setVolume(volume)
