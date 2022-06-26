@@ -1,3 +1,4 @@
+from time import time
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -70,6 +71,9 @@ class MainWindow(QMainWindow):
         self.chHandler = ChannelHandler()
         #######
         #show main Window
+        self.duration = 1
+        self.startTime = time()
+        
         self.show()
 
         self.threadpool = QThreadPool()
@@ -101,34 +105,37 @@ class MainWindow(QMainWindow):
             self.cbMidiFile.clear()
             self.fileList.append(os.path.basename(self.filename))
             self.cbMidiFile.addItems(self.fileList)
-            worker = Worker(self.loadFileThread)
-            worker.signals.finished.connect(self.showMidiFile)
+            #worker = Worker(self.loadFileThread)
+            #worker.signals.finished.connect(self.showMidiFile)
             #worker.signals.progress.connect(self.progress_fn)
             # Execute worker
-            self.threadpool.start(worker)
+            #self.threadpool.start(worker)
 
     def updateCanvas(self):
-        [pos, endPosition] = self.midVis.updatePointer(self.ind)
+        
+        progress = (time() - self.startTime) / self.duration
+        [pos, endPosition] = self.midVis.updatePointer(progress)
         self.ind += 1
         if self.ind > 200:
             self.scrollArea.horizontalScrollBar().setValue(self.scrollArea.horizontalScrollBar().value()+ 1)  
         print([pos, endPosition])
-        if  pos == endPosition:
-            self._timer.stop()
+        
         #add speed of pointer after reaching end of field
 
     def playTrack(self):
+        
         #load parameters
         self.is_stopped = False
         self.progressBar.setMaximum(self.midVis.getMessageCount())
         #create worker thread
         worker = Worker(self.playMidiFile)
-        #worker.signals.finished.connect(self.thread_complete)
+        worker.signals.finished.connect(self.stopTrack)
         worker.signals.progress.connect(self.progress_fn)
         # Execute worker
         self.threadpool.start(worker)
-        self.updateLog("Start playing File")
+        
         self._timer.start()
+        self.updateLog("Start playing File")        
 
     def stopTrack(self):
         self.is_stopped = True
@@ -154,7 +161,13 @@ class MainWindow(QMainWindow):
         mid = MidiFile(self.filename)
         msgCounter = 0
         maxTones= 0 
-        fileDuration = mid.length()
+        
+        self.startTime = time()
+        self.duration = self.midVis.totalTimeSeconds 
+        
+        
+        print("Duration: " + str(self.duration))       
+        
         for msg in mid.play():
             if not msg.is_meta:
                 if self.is_stopped:
@@ -173,7 +186,7 @@ class MainWindow(QMainWindow):
                         elif msg.type  == "note_off":
                             self.chHandler.stopTone(msg.note, msg.dict()["channel"])
                         maxTones = max(maxTones, len(self.chHandler.tones))
-        self.stopTrack()
+        #self.stopTrack()
         return "Done."
 
     # thread signal outputs

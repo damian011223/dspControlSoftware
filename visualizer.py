@@ -280,13 +280,13 @@ class MidiVisualizer(mido.MidiFile):
 
     def calcPointerStepSize(self):
         px = plt.rcParams['figure.dpi']  # pixel in inches
-        self.stepSize = (self.xLength * px) / (np.ceil(self.totalTimeSeconds)*10)
-        print(self.xLength  * px)
-        print(self.totalTimeSeconds)
-        print(self.stepSize)
+        self.stepSize = self.xLength
+        #print("length: {}".format(self.xLength))
+        print("Total Length {}".format(self.totalTimeSeconds))
+        #print(self.stepSize)
 
     def updatePointer(self, index):
-        self.pointer.set_xdata(index*self.stepSize)
-        self.pointer.figure.canvas.draw()
         px = plt.rcParams['figure.dpi']  # pixel in inches
-        return [index*self.stepSize, self.xLength  * px]
+        self.pointer.set_xdata(index*self.stepSize  * px)
+        self.pointer.figure.canvas.draw()
+        return [index*self.stepSize  * px, self.xLength  * px]
