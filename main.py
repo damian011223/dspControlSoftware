@@ -1,3 +1,4 @@
+from time import time
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -54,8 +55,8 @@ class MainWindow(QMainWindow):
         self.buttonOpenFile.clicked.connect(self.openNewFile) 
         self.buttonPlay.clicked.connect(self.playTrack)
         self.buttonStop.clicked.connect(self.stopTrack)
-        self.adjustVolume.setMinimum(0)
-        self.adjustVolume.setMaximum(int(1023/16))
+        self.adjustVolume.setMinimum(48)
+        self.adjustVolume.setMaximum(127)
         self.adjustVolume.valueChanged.connect(self.setVolume)
         #load default values
         self.progressBar.setRange(0,0)
@@ -67,9 +68,12 @@ class MainWindow(QMainWindow):
         self._timer = self.canvas.new_timer(100)
         self._timer.add_callback(self.updateCanvas)
         #######
-        self.chHandler = ChannelHandler()
+        #self.chHandler = ChannelHandler()
         #######
         #show main Window
+        self.duration = 1
+        self.startTime = time()
+        
         self.show()
 
         self.threadpool = QThreadPool()
@@ -101,34 +105,32 @@ class MainWindow(QMainWindow):
             self.cbMidiFile.clear()
             self.fileList.append(os.path.basename(self.filename))
             self.cbMidiFile.addItems(self.fileList)
-            worker = Worker(self.loadFileThread)
-            worker.signals.finished.connect(self.showMidiFile)
-            #worker.signals.progress.connect(self.progress_fn)
-            # Execute worker
-            self.threadpool.start(worker)
 
     def updateCanvas(self):
-        [pos, endPosition] = self.midVis.updatePointer(self.ind)
+        
+        progress = (time() - self.startTime) / self.duration
+        [pos, endPosition] = self.midVis.updatePointer(progress)
         self.ind += 1
         if self.ind > 200:
             self.scrollArea.horizontalScrollBar().setValue(self.scrollArea.horizontalScrollBar().value()+ 1)  
         print([pos, endPosition])
-        if  pos == endPosition:
-            self._timer.stop()
+        
         #add speed of pointer after reaching end of field
 
     def playTrack(self):
+        
         #load parameters
         self.is_stopped = False
         self.progressBar.setMaximum(self.midVis.getMessageCount())
         #create worker thread
         worker = Worker(self.playMidiFile)
-        #worker.signals.finished.connect(self.thread_complete)
+        worker.signals.finished.connect(self.stopTrack)
         worker.signals.progress.connect(self.progress_fn)
         # Execute worker
         self.threadpool.start(worker)
-        self.updateLog("Start playing File")
+        
         self._timer.start()
+        self.updateLog("Start playing File")        
 
     def stopTrack(self):
         self.is_stopped = True
@@ -141,7 +143,7 @@ class MainWindow(QMainWindow):
     def setVolume(self):
         #set global volume here
         newVolume = self.adjustVolume.value()
-        self.chHandler.volume = newVolume
+        #self.chHandler.setVolume(newVolume)
         self.updateLog("Volume is set to " + str(newVolume))
 
     def updateLog(self, message):
@@ -154,25 +156,32 @@ class MainWindow(QMainWindow):
         mid = MidiFile(self.filename)
         msgCounter = 0
         maxTones= 0 
+        
+        self.startTime = time()
+        self.duration = self.midVis.totalTimeSeconds 
+        
+        
+        print("Duration: " + str(self.duration))       
+        
         for msg in mid.play():
             if not msg.is_meta:
                 if self.is_stopped:
                     #stop all running tones
                     #----------------------
-                    self.chHandler.dspInterface.resetDSP()
+                    #self.chHandler.dspInterface.resetDSP()
                     #----------------------
                     return "Stopped"
                 if not msg.is_cc():
                     if msg.type in ("note_on", "note_off"):# and msg.dict()["channel"] == 0:
                         if msg.type == "note_on":
-                            self.chHandler.startTone(msg.note, msg.velocity,  msg.dict()["channel"])
+                            #self.chHandler.startTone(msg.note, msg.velocity,  msg.dict()["channel"])
                             progress_callback.emit(msgCounter)
                             msgCounter += 1
 
-                        elif msg.type  == "note_off":
-                            self.chHandler.stopTone(msg.note, msg.dict()["channel"])
-                        maxTones = max(maxTones, len(self.chHandler.tones))
-        self.stopTrack()
+                        #elif msg.type  == "note_off":
+                            #self.chHandler.stopTone(msg.note, msg.dict()["channel"])
+                        #maxTones = max(maxTones, len(self.chHandler.tones))
+        #self.stopTrack()
         return "Done."
 
     # thread signal outputs
