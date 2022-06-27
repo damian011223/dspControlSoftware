@@ -33,7 +33,7 @@ class MainWindow(QMainWindow):
         uic.loadUi('steuerung.ui', self) # Load the .ui file
         #setup and load Midi Visualizer Widget
         self.fileList = []
-        self.cbMidiFile.currentIndexChanged.connect(self.selectedFileChanged)
+        self.cbMidiFile.activated.connect(self.selectedFileChanged)
         ######
         self.midVis = MidiVisualizer()
         self.canvas = FigureCanvas(self.midVis.initFigure())
@@ -61,28 +61,24 @@ class MainWindow(QMainWindow):
         #load default values
         self.progressBar.setRange(0,0)
         #self.progressBar.hide()
-        self.is_paused = False
         self.is_stopped = False
-        #####
-        self.ind = 1
-        self._timer = self.canvas.new_timer(100)
-        self._timer.add_callback(self.updateCanvas)
-        #######
         #self.chHandler = ChannelHandler()
         #######
         #show main Window
         self.duration = 1
         self.startTime = time()
-        
+        self.fileList = []
         self.show()
 
         self.threadpool = QThreadPool()
-        print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
 
     def selectedFileChanged(self):
+            self.midVis.clearAll()
+            self.hideMidiFile()
+            self.progressBar.show()
+            self.filename = self.fileList[self.cbMidiFile.currentIndex()]
             worker = Worker(self.loadFileThread)
             worker.signals.finished.connect(self.showMidiFile)
-            #worker.signals.progress.connect(self.progress_fn)
             # Execute worker
             self.threadpool.start(worker)
 
@@ -91,32 +87,22 @@ class MainWindow(QMainWindow):
             self.updateLog("Opening " + self.filename)
             figureSize = self.midVis.getSizeInPixels()
             self.canvas.resize(figureSize[0]-50,figureSize[1])
-            self.midVis.calcPointerStepSize() #calculate stepsize for pointer
 
     def showMidiFile(self):
         self.scrollArea.setVisible(True)
 
+    def hideMidiFile(self):
+        self.scrollArea.setVisible(False)
+
     def openNewFile(self):
         self.filename, _ = QFileDialog.getOpenFileName(None, 'Open File', '.',"Midi Files (*.mid)")
         if self.filename:
-            #clear current image
-            self.progressBar.show()
-            #self.fileNameOutput.setText(os.path.basename(self.filename))
-            self.cbMidiFile.clear()
-            self.fileList.append(os.path.basename(self.filename))
-            self.cbMidiFile.addItems(self.fileList)
+            self.fileList.append(self.filename)
+            self.cbMidiFile.addItem(os.path.basename(self.filename))
+            self.cbMidiFile.setCurrentText(os.path.basename(self.filename))
+            self.cbMidiFile.activated.emit(1)
 
-    def updateCanvas(self):
-        
-        progress = (time() - self.startTime) / self.duration
-        [pos, endPosition] = self.midVis.updatePointer(progress)
-        self.ind += 1
-        if self.ind > 200:
-            self.scrollArea.horizontalScrollBar().setValue(self.scrollArea.horizontalScrollBar().value()+ 1)  
-        print([pos, endPosition])
-        
-        #add speed of pointer after reaching end of field
-
+            
     def playTrack(self):
         
         #load parameters
@@ -128,17 +114,12 @@ class MainWindow(QMainWindow):
         worker.signals.progress.connect(self.progress_fn)
         # Execute worker
         self.threadpool.start(worker)
-        
-        self._timer.start()
         self.updateLog("Start playing File")        
 
     def stopTrack(self):
         self.is_stopped = True
         self.progressBar.setValue(0)
         self.updateLog("Stop playing track")
-        self._timer.stop()
-        self.ind = 1
-        self.updateCanvas()
 
     def setVolume(self):
         #set global volume here
