@@ -23,15 +23,15 @@ class MidiVisualizer(mido.MidiFile):
     def loadFile(self, filename):
         self.filename = filename
         self.events, trackCount = self.get_events(filename)
-        xLabels, yLabels = self.draw_midiImage()
-        self.draw_Lines(xLabels, yLabels)
+        self.draw_midiImage()
+        self.draw_Lines()
         return trackCount
         
 
     def initFigure(self):
         px = 1/plt.rcParams['figure.dpi']  # pixel to inches
         self.xLength = 620*px # size of the diagram in x
-        self.fig = plt.figure(figsize=(self.xLength, 320*px), tight_layout=True) #todo import value from first run
+        self.fig = plt.figure(figsize=(self.xLength, 320*px), tight_layout=True) 
         self.fig.tight_layout()
         self.fig.patch.set_facecolor('none')
         return self.fig
@@ -147,15 +147,14 @@ class MidiVisualizer(mido.MidiFile):
         return midiInformation
 
     def draw_midiImage(self):
-        plt.clf()
         visualizationFile = os.path.basename(self.filename)[:-4] + ".png"
         midiInformation = self.getMidiInformation() #get data from midi file
-        #plt.clf()
+        plt.clf()
         plt.subplots_adjust(left=0.045, right=1, top=1, bottom=0.09) #shift plot to corner
         # add a new subplot
-        self.a1 = self.fig.add_subplot(111)      
+        a1 = self.fig.add_subplot(111)      
         # remove backgroud for current plot
-        self.a1.set_facecolor('none')            
+        a1.set_facecolor('none')            
         #reading total ticks of track
         totalTicks = self.get_total_ticks()
         # calculate total track duration
@@ -204,11 +203,6 @@ class MidiVisualizer(mido.MidiFile):
         # add the scaled y-axes desciption to the plot
         ax = plt.gca()
         ax.set_ylim([minTone, maxTone])
-        ax.set_axis_off()
-        stepSize = (int)((maxTone - minTone) / 8)
-
-        # change scale and label of y axis (not needed here but later)
-        plt.yticks(list(range(minTone,maxTone,stepSize+1)), list(range(minTone,maxTone,stepSize+1)))
 
         # check if current file is already generated, skip repeated work
         if os.path.exists(visualizationFile): #skip plot generation if file already exists
@@ -231,23 +225,17 @@ class MidiVisualizer(mido.MidiFile):
         # draw midiInformation and stack image on a1
         for i in range(channel_nb):
             try:
-                self.a1.imshow(midiInformation[i], origin="lower", interpolation='nearest', cmap=cmaps[i], aspect='auto')
+                a1.imshow(midiInformation[i], origin="lower", interpolation='nearest', cmap=cmaps[i], aspect='auto')
             except IndexError:
                 pass
         # show midiInformation and save figure 
         # !!! don't write any code between the next two lines !!!
-        self.fig.canvas.draw()
         plt.draw()
         plt.savefig(visualizationFile,bbox_inches='tight')
-        return plt.xticks(), plt.yticks()
 
-    def draw_Lines(self, xLabels, yLabels):
+    def draw_Lines(self):
         plt.clf()
-        plt.subplots_adjust(left=0.0, right=1, top=0.995, bottom=0.0)
-        # add first axes otherwise the pointer stops moving
-        a1 = plt.Axes(self.fig, [0., 0., 1., 1.])
-        a1.set_facecolor('none')
-        self.fig.add_axes(a1)
+        #plt.subplots_adjust(left=0.0, right=1, top=0.995, bottom=0.0)
         # load generated file and set it as background
         visualizationFile = os.path.basename(self.filename)[:-4] +".png"
         img = plt.imread(visualizationFile)
@@ -256,8 +244,9 @@ class MidiVisualizer(mido.MidiFile):
         a2.set_anchor('W')
         a2.set_facecolor('none')    
         a2.imshow(img)
+        a2.set_axis_off()
+        # Turn off tick labels
         self.fig.add_axes(a2)
-        self.pointer = plt.axvline(x=0, ymin=0, ymax=40, color="r")
         plt.draw()
 
     def get_tempo(self):
@@ -274,15 +263,6 @@ class MidiVisualizer(mido.MidiFile):
                 max_ticks = ticks
         return max_ticks
 
-    def calcPointerStepSize(self):
-        px = plt.rcParams['figure.dpi']  # pixel in inches
-        self.stepSize = self.xLength
-        #print("length: {}".format(self.xLength))
-        print("Total Length {}".format(self.totalTimeSeconds))
-        #print(self.stepSize)
-
-    def updatePointer(self, index):
-        px = plt.rcParams['figure.dpi']  # pixel in inches
-        self.pointer.set_xdata(index*self.stepSize  * px)
-        self.pointer.figure.canvas.draw()
-        return [index*self.stepSize  * px, self.xLength  * px]
+    def clearAll(self):
+        plt.clf()
+        
