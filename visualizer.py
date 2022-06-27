@@ -21,6 +21,7 @@ class MidiVisualizer(mido.MidiFile):
         self.stepSize = 0
 
     def loadFile(self, filename):
+        print("FILENAME: " + filename)
         self.filename = filename
         self.events, trackCount = self.get_events(filename)
         self.draw_midiImage()
