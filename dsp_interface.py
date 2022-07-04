@@ -16,7 +16,7 @@ class DSPCommands(Enum):
 class DSPInterface:
     def __init__(self, numberOfChannels) -> None:
         self.currentTones = [0] * numberOfChannels
-        self.freqHandler = FrequencyHandler("freq.txt")
+        self.freqHandler = FrequencyHandler("data/freq.txt")
         self.initUsb()
         self.resetDSP()
         
@@ -75,6 +75,7 @@ class ChannelHandler:
         self.volume = int(1023/16)
         #self.volume = 1
         self.tones = {} # format: tone:channel
+        
         self.dspInterface = DSPInterface(self.maxChNmbr)
 
 

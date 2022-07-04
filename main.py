@@ -6,32 +6,22 @@ from PyQt5 import uic
 
 from time import sleep
 from datetime import datetime
+import os
 
 from visualizer import MidiVisualizer
 from matplotlib.backends.backend_qtagg import (FigureCanvas,  NavigationToolbar2QT as NavigationToolbar)
 from mido import MidiFile
-
-#dsp interface
-from asyncio.windows_events import NULL
-from urllib.parse import MAX_CACHE_SIZE
-from mido import MidiFile
 from dsp_interface import ChannelHandler
-from signal import signal, SIGINT
 from multithread import Worker
-
-#-----------------------------------------------------------------------
-
-#-----------------------------------------------------------------------
-
 
 class MainWindow(QMainWindow):
 
 
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
-        uic.loadUi('steuerung.ui', self) # Load the .ui file
+        uic.loadUi(os.path.join(os.path.dirname(__file__), "data/layout.ui"), self) # Load the .ui file
         #setup and load Midi Visualizer Widget
-        self.fileList = []
+        self.initFileList()
         self.cbMidiFile.activated.connect(self.selectedFileChanged)
         ######
         self.midVis = MidiVisualizer()
@@ -62,26 +52,36 @@ class MainWindow(QMainWindow):
         #self.progressBar.hide()
         self.is_stopped = False
         # wait for valid usb connection
-        self.initChannelHandler()
+        #self.initChannelHandler()
         #show main Window
         self.duration = 1
         self.startTime = time()
-        self.fileList = []
         self.show()
         self.threadpool = QThreadPool()
 
-    def initChannelHandler(self):
-        while True:
-            try:
-                self.chHandler = ChannelHandler()
-            except ValueError:
-                for i in range(10,0,-1):
-                    sleep(1)
-                    print("Error connecting to usb, trying to reconnect in " + str(i) + " seconds")
-            else:
-                break
-            #sleep(10)
-            #retry later
+    # def initChannelHandler(self): #TODO open gui first and then wait until connected, show error in log
+    #     while True:
+    #         try:
+    #             #self.chHandler = ChannelHandler()
+    #         except ValueError:
+    #             for i in range(10,0,-1):
+    #                 sleep(1)
+    #                 print("Error connecting to dsp, trying to reconnect in " + str(i) + " seconds")
+    #         else:
+    #             break
+
+    def initFileList(self):
+        self.fileList = []
+        for file in os.listdir(os.path.abspath('data/previews')):
+            name, ext = os.path.splitext(file)
+            if ext == '.png':
+                filePath = "MIDI-Files/" + name + ".mid"
+                if os.path.exists(filePath):
+                    self.fileList.append(filePath)
+                    self.cbMidiFile.addItem(os.path.basename(name))
+                    self.cbMidiFile.setCurrentText(os.path.basename(name))
+        self.cbMidiFile.activated.emit(1)
+
 
     def selectedFileChanged(self):
             self.midVis.clearAll()
@@ -94,10 +94,17 @@ class MainWindow(QMainWindow):
             self.threadpool.start(worker)
 
     def loadFileThread(self, progress_callback):
-            trackCount = self.midVis.loadFile(self.filename)
-            self.updateLog("Opening " + self.filename)
-            figureSize = self.midVis.getSizeInPixels()
-            self.canvas.resize(figureSize[0]-50,figureSize[1])
+            try:
+                trackCount = self.midVis.loadFile(self.filename)
+            except:
+                self.updateLog("Error opening " + self.filename)
+                self.cbMidiFile.removeItem(self.cbMidiFile.count() - 1)
+                self.cbMidiFile.setCurrentIndex(self.cbMidiFile.count()-1)
+                self.fileList.pop()
+            else:
+                self.updateLog("Opening " + self.filename)
+                figureSize = self.midVis.getSizeInPixels()
+                self.canvas.resize(figureSize[0]-50,figureSize[1])
 
     def showMidiFile(self):
         self.scrollArea.setVisible(True)
@@ -135,7 +142,7 @@ class MainWindow(QMainWindow):
     def setVolume(self):
         #set global volume here
         newVolume = self.adjustVolume.value()
-        self.chHandler.setVolume(newVolume)
+        #self.chHandler.setVolume(newVolume)
         self.updateLog("Volume is set to " + str(newVolume))
 
     def updateLog(self, message):
@@ -160,19 +167,19 @@ class MainWindow(QMainWindow):
                 if self.is_stopped:
                     #stop all running tones
                     #----------------------
-                    self.chHandler.dspInterface.resetDSP()
+                    #self.chHandler.dspInterface.resetDSP()
                     #----------------------
                     return "Stopped"
                 if not msg.is_cc():
                     if msg.type in ("note_on", "note_off"):# and msg.dict()["channel"] == 0:
                         if msg.type == "note_on":
-                            self.chHandler.startTone(msg.note, msg.velocity,  msg.dict()["channel"])
+                            #self.chHandler.startTone(msg.note, msg.velocity,  msg.dict()["channel"])
                             progress_callback.emit(msgCounter)
                             msgCounter += 1
 
                         #elif msg.type  == "note_off":
-                            self.chHandler.stopTone(msg.note, msg.dict()["channel"])
-                        #maxTones = max(maxTones, len(self.chHandler.tones))
+                            #self.chHandler.stopTone(msg.note, msg.dict()["channel"])
+                        #maxTones = max(maxTones, len(#self.chHandler.tones))
         #self.stopTrack()
         return "Done."
 

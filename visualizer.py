@@ -21,7 +21,6 @@ class MidiVisualizer(mido.MidiFile):
         self.stepSize = 0
 
     def loadFile(self, filename):
-        print("FILENAME: " + filename)
         self.filename = filename
         self.events, trackCount = self.get_events(filename)
         self.draw_midiImage()
@@ -148,7 +147,7 @@ class MidiVisualizer(mido.MidiFile):
         return midiInformation
 
     def draw_midiImage(self):
-        visualizationFile = os.path.basename(self.filename)[:-4] + ".png"
+        visualizationFile =  "data/previews/" + os.path.basename(self.filename)[:-4] + ".png"
         midiInformation = self.getMidiInformation() #get data from midi file
         plt.clf()
         plt.subplots_adjust(left=0.045, right=1, top=1, bottom=0.09) #shift plot to corner
@@ -238,7 +237,7 @@ class MidiVisualizer(mido.MidiFile):
         plt.clf()
         #plt.subplots_adjust(left=0.0, right=1, top=0.995, bottom=0.0)
         # load generated file and set it as background
-        visualizationFile = os.path.basename(self.filename)[:-4] +".png"
+        visualizationFile = "data/previews/" + os.path.basename(self.filename)[:-4] +".png"
         img = plt.imread(visualizationFile)
         a2 = self.fig.add_subplot(111)
         #a2.set_axis_off()

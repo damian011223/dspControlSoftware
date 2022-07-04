@@ -1,17 +1,1 @@
-﻿*.pdf
-*.docx
-*.cmd
-*.mp3
-*.mid
-*.txt
-HostProgram
-test_file
-Host Steuerung
-__pycache__
-*.bak
-GameofThrones.png
-other1.png
-FurElise.png
-.vscode/launch.json
-.vscode
-*.json
+﻿__pycache__
