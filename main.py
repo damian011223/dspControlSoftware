@@ -51,24 +51,24 @@ class MainWindow(QMainWindow):
         self.progressBar.setRange(0,0)
         #self.progressBar.hide()
         self.is_stopped = False
-        # wait for valid usb connection
-        #self.initChannelHandler()
         #show main Window
         self.duration = 1
         self.startTime = time()
         self.show()
         self.threadpool = QThreadPool()
+        # wait for valid usb connection
+        self.initChannelHandler()
 
-    # def initChannelHandler(self): #TODO open gui first and then wait until connected, show error in log
-    #     while True:
-    #         try:
-    #             #self.chHandler = ChannelHandler()
-    #         except ValueError:
-    #             for i in range(10,0,-1):
-    #                 sleep(1)
-    #                 print("Error connecting to dsp, trying to reconnect in " + str(i) + " seconds")
-    #         else:
-    #             break
+    def initChannelHandler(self): #TODO open gui first and then wait until connected, show error in log
+        while True:
+            try:
+                self.chHandler = ChannelHandler()
+            except ValueError:
+                for i in range(10,0,-1):
+                    sleep(1)
+                    print("Error connecting to dsp, trying to reconnect in " + str(i) + " seconds")
+            else:
+                break
 
     def initFileList(self):
         self.fileList = []
@@ -142,7 +142,7 @@ class MainWindow(QMainWindow):
     def setVolume(self):
         #set global volume here
         newVolume = self.adjustVolume.value()
-        #self.chHandler.setVolume(newVolume)
+        self.chHandler.setVolume(newVolume)
         self.updateLog("Volume is set to " + str(newVolume))
 
     def updateLog(self, message):
@@ -167,20 +167,20 @@ class MainWindow(QMainWindow):
                 if self.is_stopped:
                     #stop all running tones
                     #----------------------
-                    #self.chHandler.dspInterface.resetDSP()
+                    self.chHandler.dspInterface.resetDSP()
                     #----------------------
                     return "Stopped"
                 if not msg.is_cc():
                     if msg.type in ("note_on", "note_off"):# and msg.dict()["channel"] == 0:
                         if msg.type == "note_on":
-                            #self.chHandler.startTone(msg.note, msg.velocity,  msg.dict()["channel"])
+                            self.chHandler.startTone(msg.note, msg.velocity,  msg.dict()["channel"])
                             progress_callback.emit(msgCounter)
                             msgCounter += 1
 
-                        #elif msg.type  == "note_off":
-                            #self.chHandler.stopTone(msg.note, msg.dict()["channel"])
-                        #maxTones = max(maxTones, len(#self.chHandler.tones))
-        #self.stopTrack()
+                        elif msg.type  == "note_off":
+                            self.chHandler.stopTone(msg.note, msg.dict()["channel"])
+                        maxTones = max(maxTones, len(self.chHandler.tones))
+        self.stopTrack()
         return "Done."
 
     # thread signal outputs

@@ -118,7 +118,7 @@ class ChannelHandler:
             #send stop Tone
             self.dspInterface.stopTone(channel)
         
-        print(len(self.tones))
+        #print(len(self.tones))
         
     def setVolume(self, volume):
         self.dspInterface.setVolume(volume)
