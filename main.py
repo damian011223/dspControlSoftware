@@ -59,7 +59,7 @@ class MainWindow(QMainWindow):
         # wait for valid usb connection
         self.initChannelHandler()
 
-    def initChannelHandler(self): #TODO open gui first and then wait until connected, show error in log
+    def initChannelHandler(self):
         while True:
             try:
                 self.chHandler = ChannelHandler()
@@ -78,8 +78,8 @@ class MainWindow(QMainWindow):
                 filePath = "MIDI-Files/" + name + ".mid"
                 if os.path.exists(filePath):
                     self.fileList.append(filePath)
-                    self.cbMidiFile.addItem(os.path.basename(name))
-                    self.cbMidiFile.setCurrentText(os.path.basename(name))
+                    self.cbMidiFile.addItem(os.path.basename(name) + ".mid")
+                    self.cbMidiFile.setCurrentText(os.path.basename(name) + ".mid")
         self.cbMidiFile.activated.emit(1)
 
 
@@ -121,8 +121,7 @@ class MainWindow(QMainWindow):
             self.cbMidiFile.activated.emit(1)
 
             
-    def playTrack(self):
-        
+    def playTrack(self):  
         #load parameters
         self.is_stopped = False
         self.progressBar.setMaximum(self.midVis.getMessageCount())
@@ -137,38 +136,27 @@ class MainWindow(QMainWindow):
     def stopTrack(self):
         self.is_stopped = True
         self.progressBar.setValue(0)
-        self.updateLog("Stop playing track")
+        self.updateLog("Stop playing File")
 
     def setVolume(self):
         #set global volume here
         newVolume = self.adjustVolume.value()
         self.chHandler.setVolume(newVolume)
-        self.updateLog("Volume is set to " + str(newVolume))
+        self.updateLog("Set Volume to " + str(newVolume-48)) #offset to display value from zero upwards
 
     def updateLog(self, message):
         now = datetime.now()
         self.logOutput.append(now.strftime("%H:%M:%S") + "  " + message + "\n")
 
-    # thread functions
     def playMidiFile(self, progress_callback):
-        #Playing the midi messages in seperate thread
         mid = MidiFile(self.filename)
         msgCounter = 0
         maxTones= 0 
         
-        self.startTime = time()
-        self.duration = self.midVis.totalTimeSeconds 
-        
-        
-        print("Duration: " + str(self.duration))       
-        
         for msg in mid.play():
             if not msg.is_meta:
                 if self.is_stopped:
-                    #stop all running tones
-                    #----------------------
                     self.chHandler.dspInterface.resetDSP()
-                    #----------------------
                     return "Stopped"
                 if not msg.is_cc():
                     if msg.type in ("note_on", "note_off"):# and msg.dict()["channel"] == 0:
@@ -176,20 +164,15 @@ class MainWindow(QMainWindow):
                             self.chHandler.startTone(msg.note, msg.velocity,  msg.dict()["channel"])
                             progress_callback.emit(msgCounter)
                             msgCounter += 1
-
                         elif msg.type  == "note_off":
                             self.chHandler.stopTone(msg.note, msg.dict()["channel"])
                         maxTones = max(maxTones, len(self.chHandler.tones))
-        self.stopTrack()
         return "Done."
 
     # thread signal outputs
     def progress_fn(self, counter):
         #update progress bar
         self.progressBar.setValue(counter)
-
-    def thread_complete(self, retValue):
-        print("Thread completed, with " + retValue)
     
 
 app = QApplication([])

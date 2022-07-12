@@ -206,7 +206,6 @@ class MidiVisualizer(mido.MidiFile):
 
         # check if current file is already generated, skip repeated work
         if os.path.exists(visualizationFile): #skip plot generation if file already exists
-            print("File already exists, skipping gneration")
             return plt.xticks(), plt.yticks()
 
         # build colors for differnt channels
