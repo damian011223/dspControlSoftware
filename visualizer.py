@@ -1,20 +1,14 @@
-from gettext import ngettext
 import mido
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.colors import colorConverter
-import matplotlib.patches as mpatches
 import os
 
-from time import sleep
 
-
-# inherit the origin mido class
 class MidiVisualizer(mido.MidiFile):
 
     def __init__(self):
-        #self.sr = 10
         self.meta = {}
         self.msgCounter = 0
         self.totalTimeSeconds = 0
@@ -166,7 +160,7 @@ class MidiVisualizer(mido.MidiFile):
         # increment number of total ticks until a full intervall is reached
         while(totalTicks % 5000 != 0):
             totalTicks += 1
-        px = 1/plt.rcParams['figure.dpi']  # pixel to inches TODO rename and move to top
+        px = 1/plt.rcParams['figure.dpi']  # pixel to inches 
         # increase diagramm if track is longer than 8 seconds otherwise set size to 800 pixels
         if self.totalTimeSeconds > 8:
             x = self.totalTimeSeconds - 8

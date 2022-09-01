@@ -3,8 +3,6 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5 import uic
-
-from time import sleep
 from datetime import datetime
 import os
 import sys
@@ -21,14 +19,12 @@ class MainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
         uic.loadUi(os.path.join(os.path.dirname(__file__), "data/layout.ui"), self) # Load the .ui file
-        #setup and load Midi Visualizer Widget
+        # setup and load Midi Visualizer Widget
         self.initFileList()
         self.cbMidiFile.activated.connect(self.selectedFileChanged)
-        ######
         self.midVis = MidiVisualizer()
         self.canvas = FigureCanvas(self.midVis.initFigure())
         self.canvas.setStyleSheet("background-color:transparent;")
-        #self.canvas.si #set_size_inches(2, 3)
         self.toolbar = NavigationToolbar(self.canvas, self)
         self.toolbar.setVisible(False)
         layout = QVBoxLayout()
@@ -41,7 +37,7 @@ class MainWindow(QMainWindow):
         self.scrollArea.setVisible(False)
         layout.addWidget(self.scrollArea)
         self.midoVisualizerWidget.setLayout(layout)
-        #connections between buttons
+        # connections between buttons
         self.buttonOpenFile.clicked.connect(self.openNewFile) 
         self.buttonPlay.clicked.connect(self.playTrack)
         self.buttonStop.clicked.connect(self.stopTrack)
@@ -49,16 +45,14 @@ class MainWindow(QMainWindow):
         self.adjustVolume.setMaximum(127)
         self.adjustVolume.setValue(120)
         self.adjustVolume.valueChanged.connect(self.setVolume)
-        #load default values
+        # load default values
         self.progressBar.setRange(0,0)
-        #self.progressBar.hide()
         self.is_stopped = False
-        #show main Window
+        # show main Window
         self.duration = 1
         self.startTime = time()
         self.show()
         self.threadpool = QThreadPool()
-        # wait for valid usb connection
         self.initChannelHandler()
         # disable all buttons to prevent failiure 
         self.buttonPlay.setEnabled(False)
@@ -69,7 +63,7 @@ class MainWindow(QMainWindow):
             self.chHandler = ChannelHandler()
             self.updateLog("Connection to DSP-Board established.")
         except ValueError:
-            reply = QMessageBox.critical(self, 'Error', 'No DSP Chip detected, retry?', QMessageBox.Retry | QMessageBox.Abort, QMessageBox.Abort)
+            reply = QMessageBox.critical(self, 'Error', 'No DSP-Boad detected, retry?', QMessageBox.Retry | QMessageBox.Abort, QMessageBox.Abort)
             if reply == QMessageBox.Retry:
                 self.initChannelHandler()
             else:

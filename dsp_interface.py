@@ -1,5 +1,3 @@
-from time import sleep
-from numpy import zeros
 import usb
 import usb.core
 import usb.util
@@ -95,7 +93,6 @@ class ChannelHandler:
 
                 else:
                     # tone already played
-                    # TODO handle
                     print("Tone already active")
                     return
         else:
@@ -104,7 +101,6 @@ class ChannelHandler:
             return
 
         channel = index
-        #print(len(self.tones))
         
         # send start Tone on channel index
         gain = self.volume * velocity / 127
@@ -118,7 +114,6 @@ class ChannelHandler:
             #send stop Tone
             self.dspInterface.stopTone(channel)
         
-        #print(len(self.tones))
         
     def setVolume(self, volume):
         self.dspInterface.setVolume(volume)
