@@ -7,6 +7,7 @@ from PyQt5 import uic
 from time import sleep
 from datetime import datetime
 import os
+import sys
 
 from visualizer import MidiVisualizer
 from matplotlib.backends.backend_qtagg import (FigureCanvas,  NavigationToolbar2QT as NavigationToolbar)
@@ -59,17 +60,20 @@ class MainWindow(QMainWindow):
         self.threadpool = QThreadPool()
         # wait for valid usb connection
         self.initChannelHandler()
+        # disable all buttons to prevent failiure 
+        self.buttonPlay.setEnabled(False)
+        self.buttonStop.setEnabled(False)
 
     def initChannelHandler(self):
-        while True:
-            try:
-                self.chHandler = ChannelHandler()
-            except ValueError:
-                for i in range(10,0,-1):
-                    sleep(1)
-                    print("Error connecting to dsp, trying to reconnect in " + str(i) + " seconds")
+        try:
+            self.chHandler = ChannelHandler()
+            self.updateLog("Connection to DSP-Board established.")
+        except ValueError:
+            reply = QMessageBox.critical(self, 'Error', 'No DSP Chip detected, retry?', QMessageBox.Retry | QMessageBox.Abort, QMessageBox.Abort)
+            if reply == QMessageBox.Retry:
+                self.initChannelHandler()
             else:
-                break
+                sys.exit()
 
     def initFileList(self):
         self.fileList = []
@@ -93,6 +97,8 @@ class MainWindow(QMainWindow):
             worker.signals.finished.connect(self.showMidiFile)
             # Execute worker
             self.threadpool.start(worker)
+            self.buttonStop.setEnabled(True)
+            self.buttonPlay.setEnabled(True)
 
     def loadFileThread(self, progress_callback):
             try:
@@ -160,7 +166,7 @@ class MainWindow(QMainWindow):
                     self.chHandler.dspInterface.resetDSP()
                     return "Stopped"
                 if not msg.is_cc():
-                    if msg.type in ("note_on", "note_off"):# and msg.dict()["channel"] == 0:
+                    if msg.type in ("note_on", "note_off"):
                         if msg.type == "note_on":
                             self.chHandler.startTone(msg.note, msg.velocity,  msg.dict()["channel"])
                             progress_callback.emit(msgCounter)
