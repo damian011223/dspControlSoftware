@@ -46,6 +46,7 @@ class MainWindow(QMainWindow):
         self.buttonStop.clicked.connect(self.stopTrack)
         self.adjustVolume.setMinimum(48)
         self.adjustVolume.setMaximum(127)
+        self.adjustVolume.setValue(120)
         self.adjustVolume.valueChanged.connect(self.setVolume)
         #load default values
         self.progressBar.setRange(0,0)
